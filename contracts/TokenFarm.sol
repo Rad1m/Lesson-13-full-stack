@@ -1,29 +1,38 @@
 // SPDX-License-Identifier: MIT
 
 // GOALS FOR THIS PROJECT:
-// stake Tokens
-// unstake tokens
-// issue tokens
-// add allowed tokens
-// get ETH value
-// optional - burn tokens
+// stake Tokens - DONE
+// unstake tokens - DONE
+// issue tokens - DONE
+// add allowed tokens - DONE
+// get token value - DONE
+// optional - burn tokens (NOT DONE)
 
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
 contract TokenFarm is Ownable {
     // mapping token address -> staker address -> amount
     mapping(address => mapping(address => uint256)) public stakingBalance;
     mapping(address => uint256) public uniqueTokensStaked;
+    mapping(address => address) public tokenPriceFeedMapping;
 
     address[] public stakers;
     address[] public allowedTokens;
-    IER20 public dappToken;
+    IERC20 public dappToken;
 
     constructor(address _dappTokenAddress) public {
-        dappToken = IER20(_dappTokenAddress);
+        dappToken = IERC20(_dappTokenAddress);
+    }
+
+    function setPriceFeedContract(address _token, address _priceFeed)
+        public
+        onlyOwner
+    {
+        tokenPriceFeedMapping[_token] = _priceFeed;
     }
 
     function issueTokens() public onlyOwner {
@@ -35,8 +44,8 @@ contract TokenFarm is Ownable {
         ) {
             address recipient = stakers[stakersIndex];
             // send a token reward to stakers based on their TVL
-            uint256 userTVL = getUserTVL(recipient);
-            dappToken.transfer(recipient, TVL);
+            uint256 userTotalValue = getUserTVL(recipient);
+            dappToken.transfer(recipient, userTotalValue);
         }
     }
 
@@ -44,9 +53,9 @@ contract TokenFarm is Ownable {
         uint256 totalValue = 0;
         require(uniqueTokensStaked[_user] > 0, "No tokens staked!");
         for (
-            uint256 allowedTokensIdex = 0;
-            allowedTokensIdex < allowedTokens.length;
-            allowedTokensIdex++
+            uint256 allowedTokensIndex = 0;
+            allowedTokensIndex < allowedTokens.length;
+            allowedTokensIndex++
         ) {
             totalValue =
                 totalValue +
@@ -55,6 +64,7 @@ contract TokenFarm is Ownable {
                     allowedTokens[allowedTokensIndex]
                 );
         }
+        return totalValue;
     }
 
     function getUserSingleTokenValue(address _user, address _token)
@@ -66,17 +76,29 @@ contract TokenFarm is Ownable {
             return 0;
         }
         // price of the token multipllied by staking balance
-        getTokenValue(_token);
+        (uint256 price, uint256 decimals) = getTokenValue(_token);
+        return ((stakingBalance[_token][_user] * price) / (10**decimals));
     }
 
-    function getTokenValue(address _token) public view returns (uint256) {
+    function getTokenValue(address _token)
+        public
+        view
+        returns (uint256, uint256)
+    {
         // chainlink price feed
+        address priceFeedAddress = tokenPriceFeedMapping[_token];
+        AggregatorV3Interface priceFeed = AggregatorV3Interface(
+            priceFeedAddress
+        );
+        (, int256 price, , , ) = priceFeed.latestRoundData();
+        uint256 decimals = uint256(priceFeed.decimals());
+        return (uint256(price), decimals);
     }
 
     function stakeTokens(uint256 _amount, address _token) public {
         require(_amount > 0, "Amount must be more than 0");
         require(tokenIsAllowed(_token), "Token is currently not allowed");
-        IER20(_token).transferFrom(msg.sender, address(this), _amount);
+        IERC20(_token).transferFrom(msg.sender, address(this), _amount);
         updateUniqueTokensStaked(msg.sender, _token);
         stakingBalance[_token][msg.sender] =
             stakingBalance[_token][msg.sender] +
@@ -86,7 +108,16 @@ contract TokenFarm is Ownable {
         }
     }
 
-    function updateUniqueTokensStaked(address user, address token) internal {
+    function unstakeTokens(address _token) public {
+        uint256 balance = stakingBalance[_token][msg.sender]; // get staked balance of the token from the sender (user sends request)
+        require(balance > 0, "Staking balance can't be 0");
+        IERC20(_token).transfer(msg.sender, balance);
+        stakingBalance[_token][msg.sender] = 0; // this is unstaking the entire balance, would be better to let user choose how much to unstake
+        uniqueTokensStaked[msg.sender] = uniqueTokensStaked[msg.sender] - 1;
+        // additional functionalilty would be to remove user from the stakers array, line of code with address[] public stakers; however removing from array is consuming gas
+    }
+
+    function updateUniqueTokensStaked(address _user, address _token) internal {
         if (stakingBalance[_token][_user] <= 0) {
             uniqueTokensStaked[_user] = uniqueTokensStaked[_user] + 1;
         }
