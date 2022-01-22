@@ -104,6 +104,7 @@ def test_unstake_tokens(amount_staked):
     token_farm, dapp_token = test_stake_tokens(amount_staked)
     # Act
     token_farm.unstakeTokens(dapp_token.address, {"from": account})
+    # Assert
     assert dapp_token.balanceOf(account.address) == KEPT_BALANCE
     assert token_farm.stakingBalance(dapp_token.address, account.address) == 0
     assert token_farm.uniqueTokensStaked(account.address) == 0
@@ -124,7 +125,7 @@ def test_add_allowed_tokens():
         token_farm.addAllowedTokens(dapp_token.address, {"from": non_owner})
 
 
-def test_issue_tokens():
+def test_issue_tokens(amount_staked):
     # Arrange
     if network.show_active() not in LOCAL_BLOCKCHAIN_ENVIRONMENTS:
         pytest.skip("Only for local testing!")
@@ -133,8 +134,28 @@ def test_issue_tokens():
     starting_balance = dapp_token.balanceOf(account.address)
     # Act
     token_farm.issueTokens({"from": account})
-    # Arrange
+    # Assert
     assert (
         dapp_token.balanceOf(account.address)
         == starting_balance + INITIAL_PRICE_FEED_VALUE
     )
+
+
+###################################################################
+##        THIS IS MY OWN CODE FOR TESTING MY FUNCTIONS           ##
+###################################################################
+
+
+def test_burn_tokens(amount_staked):
+    # Arrange
+    if network.show_active() not in LOCAL_BLOCKCHAIN_ENVIRONMENTS:
+        pytest.skip("Only for local testing!")
+    account = get_account()
+    token_farm, dapp_token = test_stake_tokens(amount_staked)
+    starting_balance = dapp_token.balanceOf(account.address)
+    # Act
+    token_farm.burnTokens(dapp_token.address, {"from": account})
+    # Assert
+    assert dapp_token.balanceOf(account.address) == KEPT_BALANCE - amount_staked
+    assert token_farm.stakingBalance(dapp_token.address, account.address) == 0
+    assert token_farm.uniqueTokensStaked(account.address) == 0

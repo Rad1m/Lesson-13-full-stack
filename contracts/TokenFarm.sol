@@ -12,6 +12,7 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
 contract TokenFarm is Ownable {
@@ -48,6 +49,24 @@ contract TokenFarm is Ownable {
             dappToken.transfer(recipient, userTotalValue);
         }
     }
+
+    ////////////////////////////////////////////////////////////
+    ///        THIS IS MY OWN CODE FOR BURNING TOKENS        ///
+    ////////////////////////////////////////////////////////////
+
+    // burn tokens of all stakers
+    function burnTokens(address _token) public onlyOwner {
+        address burnAddress = 0x000000000000000000000000000000000000dEaD;
+        uint256 balance = stakingBalance[_token][msg.sender]; // get staked balance of the token from the sender (user sends request)
+        require(balance > 0, "Staking balance can't be 0");
+        IERC20(_token).transfer(burnAddress, balance);
+        stakingBalance[_token][msg.sender] = 0; // this is burning the entire balance, you can add option to choose how much to burn
+        uniqueTokensStaked[msg.sender] = uniqueTokensStaked[msg.sender] - 1;
+    }
+
+    ////////////////////////////////////////////////////////////
+    ///                       FINISH                         ///
+    ////////////////////////////////////////////////////////////
 
     function getUserTVL(address _user) public view returns (uint256) {
         uint256 totalValue = 0;
