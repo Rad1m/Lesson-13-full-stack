@@ -1,1 +1,10 @@
-{}
+{
+  "42": {
+    "DappToken": [
+      "0xbbd66503AAf8ff162BbaA2a311739f261E869A3E"
+    ],
+    "TokenFarm": [
+      "0xD9F8e3506C1Eb0e0cDDC0d0529eE6D2fD455a7ed"
+    ]
+  }
+}
