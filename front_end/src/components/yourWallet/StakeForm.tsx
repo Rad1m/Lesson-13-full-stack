@@ -52,7 +52,6 @@ export const StakeForm = ({ token }: StakeFormProps) => {
                 notification.type === "transactionSucceed" &&
                 notification.transactionName === "Stake Tokens"
         ).length > 0) {
-            console.log("Tokens Staked!")
             setShowErc20ApprovalSuccess(false)
             setShowStakeTokenSuccess(true)
         }

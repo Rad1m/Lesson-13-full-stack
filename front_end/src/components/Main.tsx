@@ -1,5 +1,5 @@
-/* eslink-disable spaced-comment */
-/// <reference types = "react-scripts" />
+/* eslint-disable spaced-comment */
+/// <reference types="react-scripts" />
 import { useEthers } from "@usedapp/core"
 import helperConfig from "../helper-config.json"
 import networkMapping from "../chain-info/deployments/map.json"
@@ -17,6 +17,14 @@ export type Token = {
     name: string
 }
 
+const useStyles = makeStyles((theme) => ({
+    title: {
+        color: theme.palette.common.white,
+        textAlign: "center",
+        padding: theme.spacing(4)
+    }
+}))
+
 export const Main = () => {
     // Show token values from the wallet
     // Get the address of different tokens
@@ -24,13 +32,12 @@ export const Main = () => {
 
     // send the brownie-config to our `src` folder
     // send the build folder
+    const classes = useStyles()
     const { chainId, error } = useEthers()
     const networkName = chainId ? helperConfig[chainId] : "dev"
-    console.log(chainId) // this is for debugging in the browswer
-    console.log(networkName) // debugging in the browser console
-
-    const dappTokenAddress = chainId ? networkMapping[String(chainId)]["DappToken"][0] : constants.AddressZero
-    const wethTokenAddress = chainId ? brownieConfig["networks"][networkName]["weth_token"] : constants.AddressZero
+    let stringChainId = String(chainId)
+    const dappTokenAddress = chainId ? networkMapping[stringChainId]["DappToken"][0] : constants.AddressZero
+    const wethTokenAddress = chainId ? brownieConfig["networks"][networkName]["weth_token"] : constants.AddressZero // brownie config
     const fauTokenAddress = chainId ? brownieConfig["networks"][networkName]["fau_token"] : constants.AddressZero
 
     const supportedTokens: Array<Token> = [
@@ -51,7 +58,8 @@ export const Main = () => {
         }
     ]
 
-    return (<YourWallet supportedTokens={supportedTokens} />)
-
-
+    return (<>
+        <h2 className={classes.title}>Dapp Token App</h2>
+        <YourWallet supportedTokens={supportedTokens} />
+    </>)
 }
