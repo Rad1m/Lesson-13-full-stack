@@ -6,7 +6,7 @@
 // issue tokens - DONE
 // add allowed tokens - DONE
 // get token value - DONE
-// optional - burn tokens (NOT DONE)
+// optional - burn tokens (DONE)
 
 pragma solidity ^0.8.0;
 
