@@ -23,12 +23,15 @@ contract TokenFarm is Ownable {
 
     address[] public stakers;
     address[] public allowedTokens;
+    
+    // we need to know what is address of token for rewards and thats why we create constructor
     IERC20 public dappToken;
-
     constructor(address _dappTokenAddress) public {
         dappToken = IERC20(_dappTokenAddress);
     }
 
+    // this is price feed from chainlink, only owner of the contract can define where the price comes on
+    // for security resons, it is impornat to make function onlyOwner
     function setPriceFeedContract(address _token, address _priceFeed)
         public
         onlyOwner
@@ -99,6 +102,8 @@ contract TokenFarm is Ownable {
         return ((stakingBalance[_token][_user] * price) / (10**decimals));
     }
 
+    // this function gets value of the token
+    // for sport result, we will need an oracle which can provide results in a way chain link does
     function getTokenValue(address _token)
         public
         view
