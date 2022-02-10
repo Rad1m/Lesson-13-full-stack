@@ -15,14 +15,20 @@ def deploy_token_farm_and_dapp_token(front_end_update=False):
     token_farm = TokenFarm.deploy(
         dapp_token.address,
         {"from": account},
-        publish_source=config["networks"][network.show_active()]["verify"],
+        publish_source=config["networks"][network.show_active()]["verify"], # When True, attempts to verify the source code on etherscan.io
     )
+    # the following code sends all minted token - small balance to the farm to be used as rewards
+    # it can be modified to send some tokens to the team
     tx = dapp_token.transfer(
         token_farm.address, dapp_token.totalSupply() - KEPT_BALANCE, {"from": account}
     )
     tx.wait(1)
     # dapp_token, weth_token, fau_token/dai
+    # fau_token is faucet token, it can be received from https://erc20faucet.com
+    # fau_token is used as DAI, just as an example
     # addresses in brownie-config.yaml
+    # we mock tokens in case they don't exist on our network (local test network)
+    # they are minted in /contracts/test/MockXXXX.sol
     weth_token = get_contract("weth_token")
     fau_token = get_contract("fau_token")
     dict_of_allowed_tokens = {
